@@ -1,0 +1,363 @@
+```html
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X (Twitter) Safe Unfollow Assistant</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        xblack: '#000000',
+                        xdark: '#16181c',
+                        xborder: '#2f3336',
+                        xaccent: '#1d9bf0',
+                        xaccentHover: '#1a8cd8',
+                        xgray: '#71767b'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for dark mode */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #16181c;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2f3336;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3e4144;
+        }
+    </style>
+</head>
+<body class="bg-black text-slate-100 min-h-screen flex flex-col antialiased">
+
+    <!-- Header / Navigation -->
+    <header class="border-b border-xborder bg-black/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="bg-white text-black p-2 rounded-full flex items-center justify-center">
+                    <i data-lucide="twitter" class="w-5 h-5 fill-current"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight">X Archive Unfollow Assistant</h1>
+                    <p class="text-xs text-xgray">Safe, client-side non-follower manager</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="resetDataBtn" class="text-xs text-red-400 hover:text-red-300 border border-red-900/50 hover:bg-red-950/30 px-3 py-1.5 rounded-full transition flex items-center gap-1.5 hidden">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Clear Saved Data
+                </button>
+                <div class="bg-emerald-950/40 border border-emerald-800/40 text-emerald-400 text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    <span>100% Private (Runs Locally)</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Upload / Data Control -->
+        <section class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Step 1: Upload Files -->
+            <div class="bg-xdark border border-xborder rounded-2xl p-5 shadow-sm">
+                <h2 class="font-bold text-base flex items-center gap-2 mb-3">
+                    <span class="w-6 h-6 rounded-full bg-xaccent text-white flex items-center justify-center text-xs font-semibold">1</span>
+                    Load Archive Files
+                </h2>
+                <p class="text-xs text-xgray mb-4">
+                    Upload <code class="bg-black/50 px-1 py-0.5 rounded text-slate-300">following.js</code> and <code class="bg-black/50 px-1 py-0.5 rounded text-slate-300">follower.js</code> from your downloaded X data folder.
+                </p>
+
+                <!-- Following Upload -->
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Upload Following (`following.js` / `.json`)</label>
+                    <div class="relative border-2 border-dashed border-xborder hover:border-xaccent rounded-xl p-3 text-center cursor-pointer transition group" id="followingDrop">
+                        <input type="file" id="followingFile" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".js,.json,.txt">
+                        <div class="flex flex-col items-center gap-1">
+                            <i data-lucide="user-plus" class="w-5 h-5 text-xgray group-hover:text-xaccent transition"></i>
+                            <span id="followingFileLabel" class="text-xs font-medium text-slate-300">Select or drop following file</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Followers Upload -->
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Upload Followers (`follower.js` / `.json`)</label>
+                    <div class="relative border-2 border-dashed border-xborder hover:border-xaccent rounded-xl p-3 text-center cursor-pointer transition group" id="followersDrop">
+                        <input type="file" id="followersFile" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".js,.json,.txt">
+                        <div class="flex flex-col items-center gap-1">
+                            <i data-lucide="users" class="w-5 h-5 text-xgray group-hover:text-xaccent transition"></i>
+                            <span id="followersFileLabel" class="text-xs font-medium text-slate-300">Select or drop followers file</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="processBtn" disabled class="w-full bg-xaccent disabled:opacity-40 disabled:cursor-not-allowed hover:bg-xaccentHover text-white font-semibold py-2.5 rounded-full text-sm transition flex items-center justify-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4"></i> Analyze Relationships
+                </button>
+            </div>
+
+            <!-- Stats & Progress Card -->
+            <div id="statsCard" class="bg-xdark border border-xborder rounded-2xl p-5 hidden flex-col gap-4">
+                <h3 class="font-semibold text-sm border-b border-xborder pb-2">Overview Summary</h3>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-black/50 p-3 rounded-xl border border-xborder/50">
+                        <span class="text-xs text-xgray block">Following</span>
+                        <span id="statFollowing" class="text-lg font-bold text-slate-200">0</span>
+                    </div>
+                    <div class="bg-black/50 p-3 rounded-xl border border-xborder/50">
+                        <span class="text-xs text-xgray block">Followers</span>
+                        <span id="statFollowers" class="text-lg font-bold text-slate-200">0</span>
+                    </div>
+                    <div class="bg-black/50 p-3 rounded-xl border border-xborder/50">
+                        <span class="text-xs text-xgray block">Non-Followers</span>
+                        <span id="statNonFollowers" class="text-lg font-bold text-amber-400">0</span>
+                    </div>
+                    <div class="bg-black/50 p-3 rounded-xl border border-xborder/50">
+                        <span class="text-xs text-xgray block">Whitelisted</span>
+                        <span id="statWhitelisted" class="text-lg font-bold text-emerald-400">0</span>
+                    </div>
+                </div>
+
+                <!-- Unfollow Progress Bar -->
+                <div class="pt-2">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-xgray">Total Queue Cleared</span>
+                        <span id="progressPercent" class="font-semibold text-xaccent">0%</span>
+                    </div>
+                    <div class="w-full bg-black/60 rounded-full h-2.5 overflow-hidden border border-xborder/50">
+                        <div id="progressBar" class="bg-xaccent h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <p id="progressText" class="text-[11px] text-xgray mt-2 text-center">0 of 0 non-followers handled</p>
+                </div>
+            </div>
+
+            <!-- How to Extract Help -->
+            <div class="bg-xdark/50 border border-xborder/60 rounded-2xl p-4 text-xs text-xgray space-y-2">
+                <div class="flex items-center gap-2 text-slate-200 font-semibold mb-1">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-xaccent"></i> How to get your archive?
+                </div>
+                <ol class="list-decimal list-inside space-y-1 pl-1">
+                    <li>Go to X Settings > <b>Your Account</b> > <b>Download archive</b>.</li>
+                    <li>Extract the downloaded zip file.</li>
+                    <li>Open folder <code class="text-slate-300">data/</code> and upload <code class="text-slate-300">following.js</code> & <code class="text-slate-300">follower.js</code>.</li>
+                </ol>
+            </div>
+
+        </section>
+
+        <!-- Right Column: Queue & Interactive Dashboard -->
+        <section class="lg:col-span-8 flex flex-col gap-4">
+
+            <!-- Empty State Header / Instructions -->
+            <div id="emptyState" class="bg-xdark border border-xborder rounded-2xl p-12 text-center flex flex-col items-center justify-center flex-1">
+                <div class="w-16 h-16 bg-black rounded-full border border-xborder flex items-center justify-center mb-4">
+                    <i data-lucide="user-x" class="w-8 h-8 text-xgray"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-1">No Queue Active</h3>
+                <p class="text-sm text-xgray max-w-md mb-6">
+                    Upload your X archive files on the left to safely filter out accounts who don't follow you back without violating rate limits.
+                </p>
+            </div>
+
+            <!-- Queue Dashboard (Hidden until processed) -->
+            <div id="queueDashboard" class="hidden flex-col gap-4">
+                
+                <!-- Queue Controls Bar -->
+                <div class="bg-xdark border border-xborder rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+                    
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-medium text-xgray">Batch Size:</span>
+                        <select id="batchSizeSelect" class="bg-black border border-xborder rounded-lg text-xs px-2.5 py-1.5 font-medium text-slate-200 focus:outline-none focus:border-xaccent">
+                            <option value="10">10 per batch</option>
+                            <option value="15">15 per batch</option>
+                            <option value="20" selected>20 per batch</option>
+                            <option value="30">30 per batch</option>
+                            <option value="50">50 per batch</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="relative flex-1 max-w-xs min-w-[180px]">
+                        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-xgray"></i>
+                        <input type="text" id="searchInput" placeholder="Search handles..." class="w-full bg-black border border-xborder rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-xaccent">
+                    </div>
+
+                    <!-- View Filter Tabs -->
+                    <div class="flex bg-black p-1 rounded-xl border border-xborder/60 text-xs">
+                        <button id="tabQueue" class="px-3 py-1 rounded-lg bg-xdark font-medium text-white transition">Active Queue</button>
+                        <button id="tabWhitelisted" class="px-3 py-1 rounded-lg font-medium text-xgray hover:text-white transition">Whitelisted</button>
+                        <button id="tabUnfollowed" class="px-3 py-1 rounded-lg font-medium text-xgray hover:text-white transition">Done</button>
+                    </div>
+                </div>
+
+                <!-- Batch Header & Navigation -->
+                <div id="batchNav" class="flex items-center justify-between px-1">
+                    <div class="flex items-center gap-2">
+                        <h2 class="font-bold text-base" id="batchTitle">Daily Batch #1</h2>
+                        <span id="batchCountBadge" class="bg-xaccent/10 border border-xaccent/30 text-xaccent text-xs font-semibold px-2 py-0.5 rounded-full">20 items</span>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button id="prevBatchBtn" disabled class="p-1.5 rounded-lg border border-xborder bg-xdark text-xgray hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        </button>
+                        <span id="paginationInfo" class="text-xs text-xgray font-medium">Batch 1 of 10</span>
+                        <button id="nextBatchBtn" class="p-1.5 rounded-lg border border-xborder bg-xdark text-xgray hover:text-white disabled:opacity-30 disabled:cursor-not-allowed">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Account List Cards Container -->
+                <div id="accountsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <!-- Cards will be dynamically injected here -->
+                </div>
+
+                <!-- Footer Quick Action Banner -->
+                <div class="bg-gradient-to-r from-blue-950/20 to-xdark border border-xborder rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                    <div class="flex items-center gap-2 text-slate-300">
+                        <i data-lucide="info" class="w-4 h-4 text-xaccent shrink-0"></i>
+                        <span>Clicking a username opens their X profile in a new tab for safe, manual 1-click unfollowing.</span>
+                    </div>
+                    <button id="markBatchDoneBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-xl transition shrink-0 flex items-center gap-1.5">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i> Mark Current Batch Complete
+                    </button>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        // --- State Management ---
+        let followingList = [];
+        let followersList = [];
+        let nonFollowersList = [];
+        
+        let unfollowedSet = new Set();
+        let whitelistedSet = new Set();
+
+        let currentBatchIndex = 0;
+        let batchSize = 20;
+        let activeTab = 'queue'; // 'queue', 'whitelisted', 'unfollowed'
+        let searchQuery = '';
+
+        // --- File Content Cache ---
+        let rawFollowingContent = null;
+        let rawFollowersContent = null;
+
+        // --- DOM Elements ---
+        const followingFileInput = document.getElementById('followingFile');
+        const followersFileInput = document.getElementById('followersFile');
+        const followingFileLabel = document.getElementById('followingFileLabel');
+        const followersFileLabel = document.getElementById('followersFileLabel');
+        const processBtn = document.getElementById('processBtn');
+        const resetDataBtn = document.getElementById('resetDataBtn');
+
+        const emptyState = document.getElementById('emptyState');
+        const queueDashboard = document.getElementById('queueDashboard');
+        const statsCard = document.getElementById('statsCard');
+
+        const statFollowing = document.getElementById('statFollowing');
+        const statFollowers = document.getElementById('statFollowers');
+        const statNonFollowers = document.getElementById('statNonFollowers');
+        const statWhitelisted = document.getElementById('statWhitelisted');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressText = document.getElementById('progressText');
+
+        const accountsContainer = document.getElementById('accountsContainer');
+        const batchSizeSelect = document.getElementById('batchSizeSelect');
+        const searchInput = document.getElementById('searchInput');
+
+        const prevBatchBtn = document.getElementById('prevBatchBtn');
+        const nextBatchBtn = document.getElementById('nextBatchBtn');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const batchTitle = document.getElementById('batchTitle');
+        const batchCountBadge = document.getElementById('batchCountBadge');
+        const markBatchDoneBtn = document.getElementById('markBatchDoneBtn');
+
+        const tabQueue = document.getElementById('tabQueue');
+        const tabWhitelisted = document.getElementById('tabWhitelisted');
+        const tabUnfollowed = document.getElementById('tabUnfollowed');
+
+        // --- Initialize App & Load Saved LocalStorage ---
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadLocalStorage();
+            setupEventListeners();
+        });
+
+        function loadLocalStorage() {
+            const savedUnfollowed = localStorage.getItem('x_unfollowed_set');
+            const savedWhitelisted = localStorage.getItem('x_whitelisted_set');
+            const savedFollowing = localStorage.getItem('x_following_cache');
+            const savedFollowers = localStorage.getItem('x_followers_cache');
+
+            if (savedUnfollowed) unfollowedSet = new Set(JSON.parse(savedUnfollowed));
+            if (savedWhitelisted) whitelistedSet = new Set(JSON.parse(savedWhitelisted));
+
+            if (savedFollowing && savedFollowers) {
+                followingList = JSON.parse(savedFollowing);
+                followersList = JSON.parse(savedFollowers);
+                resetDataBtn.classList.remove('hidden');
+                calculateNonFollowers();
+                renderDashboard();
+            }
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('x_unfollowed_set', JSON.stringify([...unfollowedSet]));
+            localStorage.setItem('x_whitelisted_set', JSON.stringify([...whitelistedSet]));
+            if (followingList.length > 0) {
+                localStorage.setItem('x_following_cache', JSON.stringify(followingList));
+                localStorage.setItem('x_followers_cache', JSON.stringify(followersList));
+            }
+        }
+
+        // --- File Upload Parsers ---
+        function setupEventListeners() {
+            followingFileInput.addEventListener('change', (e) => handleFileSelect(e, 'following'));
+            followersFileInput.addEventListener('change', (e) => handleFileSelect(e, 'followers'));
+
+            processBtn.addEventListener('click', processFiles);
+
+            batchSizeSelect.addEventListener('change', (e) => {
+                batchSize = parseInt(e.target.value, 10);
+                currentBatchIndex = 0;
+                renderDashboard();
+            });
+
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value.toLowerCase().trim();
+                currentBatchIndex = 0;
+                renderDashboard();
+     
